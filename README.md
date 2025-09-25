@@ -7,7 +7,7 @@ This repository contains analyses of repeat spectrum ancestral state reconstruct
 ## Contents  
 
 ### 1. `full_VGP_analyses/`  
-Ancestral state reconstruction (ASR) of all **568 genomes** in the VGP using [RESPECT](https://github.com/shahab-sarmashghi/RESPECT) (k-mer size = 31).  
+Ancestral state reconstruction (ASR) of all **568 genomes** in the VGP using phylotools. Parameters inferred from using [RESPECT](https://github.com/shahab-sarmashghi/RESPECT) (k-mer size = 31).  
 
 - **respect_full-VGP_parameters.txt**  
   Table of genome accessions with:  
