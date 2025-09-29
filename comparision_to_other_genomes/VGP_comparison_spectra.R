@@ -71,7 +71,7 @@ low_qual_spec[!gsub(" ", "_", low_qual_spec$scientific_name) %in% tree$tip.label
 
 # formatting vgp data
 high_qual_spec_params_new[,3:52] = (high_qual_spec_params_new[,3:52]/1000)
-#high_qual_spec_params_new$genome_length = high_qual_spec_params_new$genome_length/1000
+high_qual_spec_params_new$genome_length = high_qual_spec_params_new$genome_length/1000
 
 x = melt(data = high_qual_spec_params_new[,c("ScientificName", 
                                           "Superorder", "Extended lineage", "Lineage", "genome_length",
@@ -86,7 +86,7 @@ x = melt(data = high_qual_spec_params_new[,c("ScientificName",
 
 # formatting existing data
 low_qual_spec_params_new[,2:51] = (low_qual_spec_params_new[,2:51]/1000)
-#low_qual_spec_params_new$genome_length = as.numeric(low_qual_spec_params_new$genome_length)/1000
+low_qual_spec_params_new$genome_length = as.numeric(low_qual_spec_params_new$genome_length)/1000
 y = melt(data = low_qual_spec_params_new[,c("scientific_name", "genome_length", 
                                              "r1","r2","r3","r4","r5","r6","r7","r8","r9",
                                              "r10","r11","r12","r13","r14","r15","r16","r17","r18","r19",
@@ -117,11 +117,15 @@ ggplot(
                    color = `Extended lineage`)) +
   geom_segment(size = 0.65, alpha = 1,position = position_dodge(width=0.5),
                arrow = arrow(ends = "first",length =  unit(4,"pt"))) +
-  #facet_wrap(.~`Extended lineage`, nrow = 2) +
+  # facet_wrap(.~ifelse(
+  #   `Extended lineage` %in% c("Lepidosauria", "Turtles", "Crocodiles", "Birds", "Mammals"), 
+  #   "Amniotes", 
+  #   ifelse(`Extended lineage` %in% c("Lobe-finned fishes", "Ray-finned fishes", "Cartilaginous fishes", "Cyclostomes"), "Fish", "Amphibians")), 
+  #   nrow = 1, scales = "free_y") +
   #facet_wrap(.~i<3, scales = "free") +
   theme_classic() + 
-  scale_color_manual(name="", values = colorRampPalette(RColorBrewer::brewer.pal(n=8, name = "Accent"))(10)) +
-   scale_color_manual(name="",
+  scale_color_manual(name=NULL, values = colorRampPalette(RColorBrewer::brewer.pal(n=8, name = "Accent"))(10)) +
+   scale_color_manual(name=NULL,
     values = c("Mammals" = "#E69F00",  # Okabe–Ito Orange
                                 "Birds" = "#00796B",    # Teal 700
                                 "Crocodiles" = "#009688",# Teal 500
@@ -143,7 +147,10 @@ ggplot(
         panel.grid.major.y = element_line(linewidth = 0.1, color="grey80"),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_line(linewidth = 0.1, color="grey80"),
-        legend.position = "bottom",
+        legend.position = c(0.9215, 0.79),
+        legend.box.background = element_rect(color="black", size=1),
+        #legend.justification = c("right", "top"),
+        legend.box.just = c("right", "top"),
         legend.text = element_text(size=15),
         legend.title = element_text(size=20),
         legend.key.spacing.x = unit(2.0, "cm"),
@@ -154,5 +161,68 @@ ggplot(
                      #labels=percent,
                      trans="log10")+
   scale_x_continuous(breaks=c(1,10,20,30,40,50),name="31-mer frequency")
-arrow_plot
+#arrow_plot
 ggsave("./arrow_plot.pdf", plot = arrow_plot, width = 16, height = 7)
+
+
+ z[!is.na(`Extended lineage`)] %>%
+  arrange(`ScientificName`,-i) %>%
+  group_by(`ScientificName`) %>% #print(n=70) 
+  mutate(newm = as.numeric(cumsum(value.y*i)),
+            oldm = as.numeric(cumsum(value.x*i))) %>% #print(n=70) 
+   group_by(`Extended lineage`,i) %>%
+   summarize(newmcc = mean(newm),oldmcc = mean(oldm)) %>% #print(n=70) 
+ggplot(
+  aes(
+    x = i,
+    #y = sin_y((value.x - value.y)/value.y),
+    yend =  as.numeric(newmcc*1000),
+    y = as.numeric(oldmcc*1000),
+    color = `Extended lineage`)) +
+  geom_segment(size = 0.65, alpha = 1,position = position_dodge(width=0.5),
+               arrow = arrow(ends = "first",length =  unit(4,"pt"))) +
+   facet_wrap(.~ifelse(
+     `Extended lineage` %in% c("Ray-finned fishes", "Cyclostomes", "Birds","Lepidosauria"), 
+     "Small", 
+     ifelse(`Extended lineage` %in% c("Lobe-finned fishes"), "Large", "Medium")), 
+     # "Ray-finned fishes", "Cartilaginous fishes", "Cyclostomes"
+     nrow = 1, scales = "free_y") +
+  #facet_wrap(.~i<3, scales = "free") +
+  theme_classic() + 
+  scale_color_manual(name=NULL, values = colorRampPalette(RColorBrewer::brewer.pal(n=8, name = "Accent"))(10)) +
+  scale_color_manual(name=NULL,
+                     values = c("Mammals" = "#E69F00",  # Okabe–Ito Orange
+                                "Birds" = "#00796B",    # Teal 700
+                                "Crocodiles" = "#009688",# Teal 500
+                                "Turtles" = "#4DB6AC",  # Teal 300
+                                "Lepidosauria" = "#80CBC4", # Teal 200
+                                "Amphibians" = "#984EA3",   # Purple
+                                "Lobe-finned fishes" = "#A6761D", # Brown
+                                "Ray-finned fishes" = "#56B4E9",  # Okabe–Ito Sky Blue
+                                "Cartilaginous fishes" = "#0072B2", # Okabe–Ito Blue
+                                "Cyclostomes" = "#CC79A7", # Okabe–Ito Magenta
+                                "Ancestral" = "#999999"  # Neutral Gray
+                     )) +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size=15),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        title = element_text(size=15),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(linewidth = 0.1, color="grey80"),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_line(linewidth = 0.1, color="grey80"),
+        legend.position =  "bottom",
+        legend.box.background = element_rect(color="black", size=1),
+        #legend.justification = c("right", "top"),
+        legend.box.just = c("right", "top"),
+        legend.text = element_text(size=15),
+        legend.title = element_text(size=20),
+        legend.key.spacing.x = unit(2.0, "cm"),
+        strip.text = element_text(size = 17),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        plot.margin = margin(10, 10, 10, 10)) +
+  scale_y_continuous(name="k-mer count",
+                     #labels=percent,
+                     trans="log10")+
+  scale_x_continuous(breaks=c(1,10,20,30,40,50),name="31-mer frequency")
