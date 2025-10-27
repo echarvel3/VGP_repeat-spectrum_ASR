@@ -6,29 +6,25 @@ library(viridis)
 library(ggtree)
 
 
-setwd("~/Desktop/VGP_analyses/")
+setwd("~/Desktop/VGP_analyses/VGP_repeat-spectrum_ASR/full_VGP_analyses/")
 #Read Full VGP Tree
-tree = read.tree("./roadies_v1.1.4.nwk") 
+tree = read.tree("../roadies_v1.1.16b.nwk") 
 #Read Taxonomy Annotations
-merged_annots = fread("./annotations_vgp.txt")
+merged_annots = fread("../annotations_vgp.txt")
 #Read VGP Respect Results
-respect_results = fread("./final-estimated-parameters.txt")
+respect_results = fread("./respect_full-VGP_parameters.txt")
 respect_results$sample = sub(".hist", "", respect_results$sample)
 #Pool Data
-  = merge(x = respect_results,  y = merged_annots, by.x = "sample", by.y = "Assc.",)
+merged_annots  = merge(x = respect_results,  y = merged_annots, by.x = "sample", by.y = "Assc.",)
 
 # =========================================== #
 # MAXIMUM LIKELIHOOD ANCESTRAL RECONSTRUCTION #
 # =========================================== #
-# Brownian motion (BM) model
-# the 'early-burst' model (EB) -> change tends to be concentrated towards the base of the tree
-# Ornstein-Uhlenbeck model (OU) ->  tendency towards a central value 
-# NOTE: OU not supported by phylotree
-# ------------------------------------------ #
+
 # High Copy Repeats per Million ASR
 HCRM_annots = setNames(object = merged_annots$HCRM, nm = merged_annots$sample)
 HCRM_ml_asr = anc.ML(tree, HCRM_annots, model = "BM")
-# writeAncestors(tree = tree, Anc = HCRM_ml_asr, file = "./full_VGP_HCRM-ASR.nwk")
+writeAncestors(tree = tree, Anc = HCRM_ml_asr, file = "./ASR/full_VGP_HCRM-ASR.nwk")
 # extract internal node states
 HCRM_states = as.data.table(HCRM_ml_asr$ace, keep.rownames = T)
 names(HCRM_states) = c("node", "state")
@@ -44,7 +40,7 @@ HCRM_states$node = as.numeric(HCRM_states$node)
 # ------------------------------------------ #
 
 # Uniqueness Ratio ASR
-UR_annots = setNames(object = merged_annots$uniqueness_ratio, nm = merged_annots$sample)
+UR_annots = setNames(object = 1-merged_annots$uniqueness_ratio, nm = merged_annots$sample)
 UR_ml_asr = anc.ML(tree, UR_annots, model = "BM")
 # writeAncestors(tree = tree, Anc = UR_ml_asr, file = "./full_VGP_UR-ASR.nwk")
 # extract internal node states
@@ -90,302 +86,305 @@ HCRM_tree = ggtree(tree, color = "black", size = 0, branch.length="none") %<+% H
   layout_circular() + 
   scale_fill_manual(values = colorRampPalette(brewer.pal(12,"Paired"))(24)) +
   guides(color = guide_colorbar("HCRM")) +
-  geom_strip(taxa1 = "GCA_964187855.1", taxa2 = "GCA_048934315.1",
-             label = "Agnatha", offset.text=1, angle = 1,
+  geom_strip(taxa1 = "GCF_902459465.1", taxa2 = "GCF_902459465.1",
+             label = "Echinodermata", offset.text = 1, angle = 0,
+             color = "#000", extend = 0.3) +
+  geom_strip(taxa1 = "GCA_040954625.2", taxa2 = "GCA_040954625.2",
+             label = "Hemichordata", offset.text = 1, angle = 2,
+             color = "#000", extend = 0.3) +
+  geom_strip(taxa1 = "GCA_015852565.1", taxa2 = "GCA_019207075.1",
+             label = "Cephalochordata", offset.text = 1, angle = 3,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_035084275.1", taxa2 = "GCF_017639515.1",
-             label = "Chondrichthyes", offset.text=1, angle = 1,
+  geom_strip(taxa1 = "GCA_918807975.1", taxa2 = "GCA_965202585.1",
+             label = "Tunicata", offset.text = 1, angle = 5,
+             color = "#000") +
+  geom_strip(taxa1 = "GCA_964187855.1", taxa2 = "GCA_964198595.1",
+             label = "Agnatha", offset.text=1, angle = 1+4,
+             color = "#000") +
+  geom_strip(taxa1 = "GCA_035084275.1", taxa2 = "GCA_964213995.1",
+             label = "Chondrichthyes", offset.text=1, angle = 1+8,
              color = "#000") +
   geom_strip(taxa1 = "GCF_900747795.2", taxa2 = "GCF_904848185.1",
-             label = "Actinopterygii", offset.text=1, angle = 60,
+             label = "Actinopterygii", offset.text=1, angle = 60+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_040939525.1", taxa2 = "GCF_037176945.1",
-             label = "Sarcopterygii", offset.text=10, angle = 289.5,
+             label = "Sarcopterygii", offset.text=10, angle = 289.5+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_901001135.1", taxa2 = "GCA_901765095.2",
-             label = "Gymnophiona", offset.text=11, angle = 291,
+  geom_strip(taxa1 = "GCF_901001135.1", taxa2 = "GCF_902459505.1",
+             label = "Gymnophiona", offset.text=11, angle = 291+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_040938575.1", taxa2 = "GCA_964263255.1",
-             label = "Caudata", offset.text=7, angle = 291.5,
+  geom_strip(taxa1 = "GCF_040938575.1", taxa2 = "GCA_964261635.1",
+             label = "Caudata", offset.text=7, angle = 291.5+7,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_040206685.1", taxa2 = "GCA_031893055.1",
-             label = "Anura", offset.text=5, angle = 300,
+  geom_strip(taxa1 = "GCA_040206685.1", taxa2 = "GCF_040894005.1",
+             label = "Anura", offset.text=5, angle = 300+5,
              color = "#000") +
   geom_strip(taxa1 = "GCF_004115215.2", taxa2 = "GCF_015852505.1",
-             label = "Monotremes", offset.text=9, angle = 310,
+             label = "Monotremes", offset.text=9, angle = 310+5,
              color = "#000") +
   geom_strip(taxa1 = "GCF_027887165.1", taxa2 = "GCF_011100635.1",
-             label = "Marsupials", offset.text=8, angle = 315,
+             label = "Marsupials", offset.text=8, angle = 315+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_030445035.2", taxa2 = "GCF_015220235.1",
-             label = "Xenartha", offset.text=7, angle = 319,
+  geom_strip(taxa1 = "GCF_030445035.2", taxa2 = "GCA_023851605.1",
+             label = "Xenartha", offset.text=7, angle = 319+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_043290085.1", taxa2 = "GCF_024166365.1",
-             label = "Afrotheria", offset.text=7, angle = 320,
+  geom_strip(taxa1 = "GCA_043290085.1", taxa2 = "GCF_030014295.1",
+             label = "Afrotheria", offset.text=7, angle = 320+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_026018925.1", taxa2 = "GCA_949316315.1",
-             label = "Supraprimates", offset.text=11, angle = 340,
+             label = "Supraprimates", offset.text=11, angle = 340+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_964194135.1", taxa2 = "GCF_039906515.1",
-             label = "Laurasiatheria", offset.text=11, angle = 30,
+  geom_strip(taxa1 = "GCA_964194135.1", taxa2 = "GCF_011762595.1",
+             label = "Laurasiatheria", offset.text=11, angle = 30+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_046126795.1", taxa2 = "GCA_964252035.1",
-             label = "Squamata", offset.text=8, angle = 65,
+  geom_strip(taxa1 = "GCA_046126795.1", taxa2 = "GCA_964234715.1",
+             label = "Squamata", offset.text=8, angle = 65+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_045364815.1", taxa2 = "GCA_040894355.2",
-             label = "Testudines (Pleurodira)", offset.text=16, angle = 79,
+             label = "Testudines (Pleurodira)", offset.text=16, angle = 79+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_033958435.1", taxa2 = "GCA_965140295.1",
-             label = "Testudines (Cryptodira)", offset.text=16, angle = 87,
+  geom_strip(taxa1 = "GCA_033958435.1", taxa2 = "GCA_965140285.1",
+             label = "Testudines (Cryptodira)", offset.text=16, angle = 87+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_030020295.1", taxa2 = "GCF_030867095.1",
-             label = "Crocodylia", offset.text = 1, angle = 270,
+             label = "Crocodylia", offset.text = 1, angle = 270+5,
              color = "#000") +
   geom_strip(taxa1 = "GCF_040807025.1", taxa2 = "GCF_036370855.1",
-             label = "Palaeognathae", offset.text = 1, angle = 275,
+             label = "Palaeognathae", offset.text = 1, angle = 275+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_023343835.1", taxa2 = "GCA_965140915.1",
-             label = "GalloAnserformes", offset.text = 1, angle = 280,
+  geom_strip(taxa1 = "GCF_009819795.1", taxa2 = "GCA_951394365.1",
+             label = "GalloAnserformes", offset.text = 1, angle = 280+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_009769525.1", taxa2 = "GCA_964273445.1",
-             label = "Otidimorphae", offset.text = 1, angle = 295,
-             color = "#000") +
-  geom_strip(taxa1 = "GCA_009819775.1", taxa2 = "GCF_017976375.1",
+  geom_strip(taxa1 = "GCA_907165065.1", taxa2 = "GCF_036169615.1",
              label = "Columbea", offset.text = 1, angle = 296,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_907165065.1", taxa2 = "GCF_003957555.1",
-             label = "Caprimulgimorphae", offset.text = 1, angle = 296,
+  geom_strip(taxa1 = "GCF_017976375.1", taxa2 = "GCA_036417535.1",
+             label = "Otidimorphae", offset.text = 1, angle = 295+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_027574665.1", taxa2 = "GCA_964417175.1",
-             label = "Core waterbirds", offset.text = 1, angle = 310,
+  geom_strip(taxa1 = "GCA_009819775.1", taxa2 = "GCA_901699155.2",
+             label = "Caprimulgimorphae", offset.text = 1, angle = 296+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_031877795.1", taxa2 = "GCF_035770615.1",
-             label = "Core landbirds", offset.text = 1, angle = 335,
+  geom_strip(taxa1 = "GCA_030867145.1", taxa2 = "GCA_964199755.1",
+             label = "Core waterbirds", offset.text = 1, angle = 310+5,
+             color = "#000") +
+  geom_strip(taxa1 = "GCA_031877795.1", taxa2 = "GCF_027579445.1",
+             label = "Core landbirds", offset.text = 1, angle = 335+5,
              color = "#000") +
   theme(plot.margin = unit(c(0,0,0,0), units = "cm"))
-# HCRM_tree
-ggsave("./HCRM_tree.pdf", plot = HCRM_tree, width = 15, height = 50, limitsize = F)
+#HCRM_tree
+#ggsave("../figures/HCRM_tree.pdf", plot = HCRM_tree, width = 15, height = 50, limitsize = F)
 
 # ------------------------------------------ #
 
 # Uniqueness Ratio Tree
 UR_tree = ggtree(tree, color = "black", size = 0, branch.length="none") %<+% UR_states +
-  geom_tree(aes(color = 1-state), continuous = 'colour', size=1) +
+  geom_tree(aes(color = state), continuous = 'colour', size=1) +
   scale_color_gradientn(colours=rev(c("red", 'orange', 'green', 'cyan', 'blue')),
                         breaks=c(0.2, 0.4, 0.6),
                         limits=c(0, 0.8))+
   layout_circular() + 
   scale_fill_manual(values = colorRampPalette(brewer.pal(12,"Paired"))(24)) +
   guides(color = guide_colorbar("Repeat\nRatio")) +
-  geom_strip(taxa1 = "GCA_964187855.1", taxa2 = "GCA_048934315.1",
-             label = "Agnatha", offset.text=1, angle = 1,
+  geom_strip(taxa1 = "GCF_902459465.1", taxa2 = "GCF_902459465.1",
+             label = "Echinodermata", offset.text = 1, angle = 0,
+             color = "#000", extend = 0.3) +
+  geom_strip(taxa1 = "GCA_040954625.2", taxa2 = "GCA_040954625.2",
+             label = "Hemichordata", offset.text = 1, angle = 2,
+             color = "#000", extend = 0.3) +
+  geom_strip(taxa1 = "GCA_015852565.1", taxa2 = "GCA_019207075.1",
+             label = "Cephalochordata", offset.text = 1, angle = 3,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_035084275.1", taxa2 = "GCF_017639515.1",
-             label = "Chondrichthyes", offset.text=1, angle = 1,
+  geom_strip(taxa1 = "GCA_918807975.1", taxa2 = "GCA_965202585.1",
+             label = "Tunicata", offset.text = 1, angle = 5,
+             color = "#000") +
+  geom_strip(taxa1 = "GCA_964187855.1", taxa2 = "GCA_964198595.1",
+             label = "Agnatha", offset.text=1, angle = 1+4,
+             color = "#000") +
+  geom_strip(taxa1 = "GCA_035084275.1", taxa2 = "GCA_964213995.1",
+             label = "Chondrichthyes", offset.text=1, angle = 1+8,
              color = "#000") +
   geom_strip(taxa1 = "GCF_900747795.2", taxa2 = "GCF_904848185.1",
-             label = "Actinopterygii", offset.text=1, angle = 60,
+             label = "Actinopterygii", offset.text=1, angle = 60+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_040939525.1", taxa2 = "GCF_037176945.1",
-             label = "Sarcopterygii", offset.text=10, angle = 289.5,
+             label = "Sarcopterygii", offset.text=10, angle = 289.5+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_901001135.1", taxa2 = "GCA_901765095.2",
-             label = "Gymnophiona", offset.text=11, angle = 291,
+  geom_strip(taxa1 = "GCF_901001135.1", taxa2 = "GCF_902459505.1",
+             label = "Gymnophiona", offset.text=11, angle = 291+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_040938575.1", taxa2 = "GCA_964263255.1",
-             label = "Caudata", offset.text=7, angle = 291.5,
+  geom_strip(taxa1 = "GCF_040938575.1", taxa2 = "GCA_964261635.1",
+             label = "Caudata", offset.text=7, angle = 291.5+7,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_040206685.1", taxa2 = "GCA_031893055.1",
-             label = "Anura", offset.text=5, angle = 300,
+  geom_strip(taxa1 = "GCA_040206685.1", taxa2 = "GCF_040894005.1",
+             label = "Anura", offset.text=5, angle = 300+5,
              color = "#000") +
   geom_strip(taxa1 = "GCF_004115215.2", taxa2 = "GCF_015852505.1",
-             label = "Monotremes", offset.text=9, angle = 310,
+             label = "Monotremes", offset.text=9, angle = 310+5,
              color = "#000") +
   geom_strip(taxa1 = "GCF_027887165.1", taxa2 = "GCF_011100635.1",
-             label = "Marsupials", offset.text=8, angle = 315,
+             label = "Marsupials", offset.text=8, angle = 315+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_030445035.2", taxa2 = "GCF_015220235.1",
-             label = "Xenartha", offset.text=7, angle = 319,
+  geom_strip(taxa1 = "GCF_030445035.2", taxa2 = "GCA_023851605.1",
+             label = "Xenartha", offset.text=7, angle = 319+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_043290085.1", taxa2 = "GCF_024166365.1",
-             label = "Afrotheria", offset.text=7, angle = 320,
+  geom_strip(taxa1 = "GCA_043290085.1", taxa2 = "GCF_030014295.1",
+             label = "Afrotheria", offset.text=7, angle = 320+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_026018925.1", taxa2 = "GCA_949316315.1",
-             label = "Supraprimates", offset.text=11, angle = 340,
+             label = "Supraprimates", offset.text=11, angle = 340+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_964194135.1", taxa2 = "GCF_039906515.1",
-             label = "Laurasiatheria", offset.text=11, angle = 30,
+  geom_strip(taxa1 = "GCA_964194135.1", taxa2 = "GCF_011762595.1",
+             label = "Laurasiatheria", offset.text=11, angle = 30+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_046126795.1", taxa2 = "GCA_964252035.1",
-             label = "Squamata", offset.text=8, angle = 65,
+  geom_strip(taxa1 = "GCA_046126795.1", taxa2 = "GCA_964234715.1",
+             label = "Squamata", offset.text=8, angle = 65+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_045364815.1", taxa2 = "GCA_040894355.2",
-             label = "Testudines (Pleurodira)", offset.text=16, angle = 79,
+             label = "Testudines (Pleurodira)", offset.text=16, angle = 79+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_033958435.1", taxa2 = "GCA_965140295.1",
-             label = "Testudines (Cryptodira)", offset.text=16, angle = 87,
+  geom_strip(taxa1 = "GCA_033958435.1", taxa2 = "GCA_965140285.1",
+             label = "Testudines (Cryptodira)", offset.text=16, angle = 87+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_030020295.1", taxa2 = "GCF_030867095.1",
-             label = "Crocodylia", offset.text = 1, angle = 270,
+             label = "Crocodylia", offset.text = 1, angle = 270+5,
              color = "#000") +
   geom_strip(taxa1 = "GCF_040807025.1", taxa2 = "GCF_036370855.1",
-             label = "Palaeognathae", offset.text = 1, angle = 275,
+             label = "Palaeognathae", offset.text = 1, angle = 275+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_023343835.1", taxa2 = "GCA_965140915.1",
-             label = "GalloAnserformes", offset.text = 1, angle = 280,
+  geom_strip(taxa1 = "GCF_009819795.1", taxa2 = "GCA_951394365.1",
+             label = "GalloAnserformes", offset.text = 1, angle = 280+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_009769525.1", taxa2 = "GCA_964273445.1",
-             label = "Otidimorphae", offset.text = 1, angle = 295,
-             color = "#000") +
-  geom_strip(taxa1 = "GCA_009819775.1", taxa2 = "GCF_017976375.1",
+  geom_strip(taxa1 = "GCA_907165065.1", taxa2 = "GCF_036169615.1",
              label = "Columbea", offset.text = 1, angle = 296,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_907165065.1", taxa2 = "GCF_003957555.1",
-             label = "Caprimulgimorphae", offset.text = 1, angle = 296,
+  geom_strip(taxa1 = "GCF_017976375.1", taxa2 = "GCA_036417535.1",
+             label = "Otidimorphae", offset.text = 1, angle = 295+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_027574665.1", taxa2 = "GCA_964417175.1",
-             label = "Core waterbirds", offset.text = 1, angle = 310,
+  geom_strip(taxa1 = "GCA_009819775.1", taxa2 = "GCA_901699155.2",
+             label = "Caprimulgimorphae", offset.text = 1, angle = 296+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_031877795.1", taxa2 = "GCF_035770615.1",
-             label = "Core landbirds", offset.text = 1, angle = 335,
+  geom_strip(taxa1 = "GCA_030867145.1", taxa2 = "GCA_964199755.1",
+             label = "Core waterbirds", offset.text = 1, angle = 310+5,
+             color = "#000") +
+  geom_strip(taxa1 = "GCA_031877795.1", taxa2 = "GCF_027579445.1",
+             label = "Core landbirds", offset.text = 1, angle = 335+5,
              color = "#000") +
   theme(plot.margin = unit(c(0,0,0,0), units = "cm"))
 
 #UR_tree
-ggsave("./UR_tree.pdf", plot = UR_tree, width = 15, height = 15)
+#ggsave("./UR_tree.pdf", plot = UR_tree, width = 15, height = 15)
 
 # ------------------------------------------ #
 
 # Genome Length Tree
 GL_tree = ggtree(tree, color = "black", size =0, branch.length="none") %<+% GL_states +
-  geom_tree(aes(color = state), continuous = 'colour', size=1) +
+  geom_tree(aes(color = state),
+  continuous = 'colour',
+           size=1) +
   scale_color_gradientn(colours=rev(c("red", 'orange', 'green', 'cyan', 'blue')),
                         trans = "log",
                         breaks=c(400, 1000, 3000, 8000, 22000),
-                        limits=c(290, 40000)) +
-  layout_circular() + 
+                        limits=c(200, 40000)
+                        ) +
+  layout_circular() + #geom_tiplab(size = 1, aes(color = Superorder, label = Superorder))+
   scale_fill_manual(values = colorRampPalette(brewer.pal(12,"Paired"))(24)) +
   guides(color = guide_colorbar("Genome\nLength")) +
-  geom_strip(taxa1 = "GCA_964187855.1", taxa2 = "GCA_048934315.1",
-             label = "Agnatha", offset.text=1, angle = 1,
+  geom_strip(taxa1 = "GCF_902459465.1", taxa2 = "GCF_902459465.1",
+             label = "Echinodermata", offset.text = 1, angle = 0,
+             color = "#000", extend = 0.3) +
+  geom_strip(taxa1 = "GCA_040954625.2", taxa2 = "GCA_040954625.2",
+             label = "Hemichordata", offset.text = 1, angle = 2,
+             color = "#000", extend = 0.3) +
+  geom_strip(taxa1 = "GCA_015852565.1", taxa2 = "GCA_019207075.1",
+             label = "Cephalochordata", offset.text = 1, angle = 3,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_035084275.1", taxa2 = "GCF_017639515.1",
-             label = "Chondrichthyes", offset.text=1, angle = 1,
+  geom_strip(taxa1 = "GCA_918807975.1", taxa2 = "GCA_965202585.1",
+             label = "Tunicata", offset.text = 1, angle = 5,
+             color = "#000") +
+  geom_strip(taxa1 = "GCA_964187855.1", taxa2 = "GCA_964198595.1",
+             label = "Agnatha", offset.text=1, angle = 1+4,
+             color = "#000") +
+  geom_strip(taxa1 = "GCA_035084275.1", taxa2 = "GCA_964213995.1",
+             label = "Chondrichthyes", offset.text=1, angle = 1+8,
              color = "#000") +
   geom_strip(taxa1 = "GCF_900747795.2", taxa2 = "GCF_904848185.1",
-             label = "Actinopterygii", offset.text=1, angle = 60,
+             label = "Actinopterygii", offset.text=1, angle = 60+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_040939525.1", taxa2 = "GCF_037176945.1",
-             label = "Sarcopterygii", offset.text=10, angle = 289.5,
+             label = "Sarcopterygii", offset.text=10, angle = 289.5+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_901001135.1", taxa2 = "GCA_901765095.2",
-             label = "Gymnophiona", offset.text=11, angle = 291,
+  geom_strip(taxa1 = "GCF_901001135.1", taxa2 = "GCF_902459505.1",
+             label = "Gymnophiona", offset.text=11, angle = 291+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_040938575.1", taxa2 = "GCA_964263255.1",
-             label = "Caudata", offset.text=7, angle = 291.5,
+  geom_strip(taxa1 = "GCF_040938575.1", taxa2 = "GCA_964261635.1",
+             label = "Caudata", offset.text=7, angle = 291.5+7,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_040206685.1", taxa2 = "GCA_031893055.1",
-             label = "Anura", offset.text=5, angle = 300,
+  geom_strip(taxa1 = "GCA_040206685.1", taxa2 = "GCF_040894005.1",
+             label = "Anura", offset.text=5, angle = 300+5,
              color = "#000") +
   geom_strip(taxa1 = "GCF_004115215.2", taxa2 = "GCF_015852505.1",
-             label = "Monotremes", offset.text=9, angle = 310,
+             label = "Monotremes", offset.text=9, angle = 310+5,
              color = "#000") +
   geom_strip(taxa1 = "GCF_027887165.1", taxa2 = "GCF_011100635.1",
-             label = "Marsupials", offset.text=8, angle = 315,
+             label = "Marsupials", offset.text=8, angle = 315+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_030445035.2", taxa2 = "GCF_015220235.1",
-             label = "Xenartha", offset.text=7, angle = 319,
+  geom_strip(taxa1 = "GCF_030445035.2", taxa2 = "GCA_023851605.1",
+             label = "Xenartha", offset.text=7, angle = 319+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_043290085.1", taxa2 = "GCF_024166365.1",
-             label = "Afrotheria", offset.text=7, angle = 320,
+  geom_strip(taxa1 = "GCA_043290085.1", taxa2 = "GCF_030014295.1",
+             label = "Afrotheria", offset.text=7, angle = 320+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_026018925.1", taxa2 = "GCA_949316315.1",
-             label = "Supraprimates", offset.text=11, angle = 340,
+             label = "Supraprimates", offset.text=11, angle = 340+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_964194135.1", taxa2 = "GCF_039906515.1",
-             label = "Laurasiatheria", offset.text=11, angle = 30,
+  geom_strip(taxa1 = "GCA_964194135.1", taxa2 = "GCF_011762595.1",
+             label = "Laurasiatheria", offset.text=11, angle = 30+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_046126795.1", taxa2 = "GCA_964252035.1",
-             label = "Squamata", offset.text=8, angle = 65,
+  geom_strip(taxa1 = "GCA_046126795.1", taxa2 = "GCA_964234715.1",
+             label = "Squamata", offset.text=8, angle = 65+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_045364815.1", taxa2 = "GCA_040894355.2",
-             label = "Testudines (Pleurodira)", offset.text=16, angle = 79,
+             label = "Testudines (Pleurodira)", offset.text=16, angle = 79+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_033958435.1", taxa2 = "GCA_965140295.1",
-             label = "Testudines (Cryptodira)", offset.text=16, angle = 87,
+  geom_strip(taxa1 = "GCA_033958435.1", taxa2 = "GCA_965140285.1",
+             label = "Testudines (Cryptodira)", offset.text=16, angle = 87+5,
              color = "#000") +
   geom_strip(taxa1 = "GCA_030020295.1", taxa2 = "GCF_030867095.1",
-             label = "Crocodylia", offset.text = 1, angle = 270,
+             label = "Crocodylia", offset.text = 1, angle = 270+5,
              color = "#000") +
   geom_strip(taxa1 = "GCF_040807025.1", taxa2 = "GCF_036370855.1",
-             label = "Palaeognathae", offset.text = 1, angle = 275,
+             label = "Palaeognathae", offset.text = 1, angle = 275+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCF_023343835.1", taxa2 = "GCA_965140915.1",
-             label = "GalloAnserformes", offset.text = 1, angle = 280,
+  geom_strip(taxa1 = "GCF_009819795.1", taxa2 = "GCA_951394365.1",
+             label = "GalloAnserformes", offset.text = 1, angle = 280+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_009769525.1", taxa2 = "GCA_964273445.1",
-             label = "Otidimorphae", offset.text = 1, angle = 295,
-             color = "#000") +
-  geom_strip(taxa1 = "GCA_009819775.1", taxa2 = "GCF_017976375.1",
+  geom_strip(taxa1 = "GCA_907165065.1", taxa2 = "GCF_036169615.1",
              label = "Columbea", offset.text = 1, angle = 296,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_907165065.1", taxa2 = "GCF_003957555.1",
-             label = "Caprimulgimorphae", offset.text = 1, angle = 296,
+  geom_strip(taxa1 = "GCF_017976375.1", taxa2 = "GCA_036417535.1",
+             label = "Otidimorphae", offset.text = 1, angle = 295+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_027574665.1", taxa2 = "GCA_964417175.1",
-             label = "Core waterbirds", offset.text = 1, angle = 310,
+  geom_strip(taxa1 = "GCA_009819775.1", taxa2 = "GCA_901699155.2",
+             label = "Caprimulgimorphae", offset.text = 1, angle = 296+5,
              color = "#000") +
-  geom_strip(taxa1 = "GCA_031877795.1", taxa2 = "GCF_035770615.1",
-             label = "Core landbirds", offset.text = 1, angle = 335,
+  geom_strip(taxa1 = "GCA_030867145.1", taxa2 = "GCA_964199755.1",
+             label = "Core waterbirds", offset.text = 1, angle = 310+5,
+             color = "#000") +
+  geom_strip(taxa1 = "GCA_031877795.1", taxa2 = "GCF_027579445.1",
+             label = "Core landbirds", offset.text = 1, angle = 335+5,
              color = "#000") +
   theme(plot.margin = unit(c(0,0,0,0), units = "cm"))
 
 #GL_tree
-ggsave("./GL_tree.pdf", plot = GL_tree, width = 15, height = 15)
+#ggsave("./GL_tree.pdf", plot = GL_tree, width = 15, height = 15)
 
 # =========================================== #
 #               Joint Figure                  #
 # =========================================== #
 
-ggsave("./full_VGP_ASR.pdf", plot = UR_tree + HCRM_tree + GL_tree, width = 45, height = 15)
+ggsave("../figures/VGP_full_ASR.pdf", plot = UR_tree + HCRM_tree + GL_tree, width = 45, height = 15)
 
 ############ END ##############
-
-
-
-
-
-ggsave("./all_plots.pdf", plot = UR_plot + HCRM_plot + GL_plot, width = 20, height = 6)
-
-treeplot = cowplot::plot_grid(UR_tree, HCR_tree, GL_tree,
-                              labels = c("", "", ""), 
-                              label_size = 20,
-                              ncol = 3,
-                              rel_heights = c(1,1,1))
-
-ggsave("./all_trees.pdf", plot = treeplot, width = 41, height = 15)
-
-UR_plot + HCRM_plot + GL_plot
-ggsave("./all_panels.pdf", plot =  cowplot::plot_grid(UR_plot + HCRM_plot + GL_plot, treeplot,
-                              labels = c("", "", ""), 
-                              label_size = 20,
-                              ncol = 1,
-                              rel_heights = c(1,3)), 
-       width = 20, height = 20)
-bad_treeplot
-bad_UR_tree2 = bad_UR_tree + theme(plot.background = element_blank())
-
-bad_treeplot = cowplot::plot_grid(bad_UR_tree2, bad_UR_tree2, bad_HCRM_tree,
-                              labels = c("", "", ""), 
-                              label_size = 20,
-                              ncol = 3, scale = 1.5,
-                              rel_heights = c(1,1,1))
-#bad_treeplot
-ggsave("./all_existing_ASR.pdf", plot = bad_treeplot, width = 45, height = 15)
-
-#UR_plot + HCRM_plot + GL_plot + UR_tree + HCR_tree + GL_tree
-
-
 
 
 

@@ -4,69 +4,19 @@ library(ggplot2)
 library(RColorBrewer)
 library(viridis)
 library(ggtree)
+library(dplyr)
 
-# Helper function:
-split_row <- function(x){
-  z = paste(collapse = "_", strsplit(x, split = "_")[[1]][1:2])
-}
-
-# =========================================== #
-#              Data Pre-processing            #
-# =========================================== #
-setwd("~/Desktop/VGP_analyses/")
-# Read Subsampled Tree (have both VGP and existing assemblies)
-tree = read.tree("./low_qual_genomes/roadies_v1.1.4_existing_genomes.tre") 
-tree = drop.tip(tree, tip = c("Sminthopsis_crassicaudata","Shinisaurus_crocodilurus","Scardinius_erythrophthalmus","Tupaia_tana","Macrotis_lagotis","Aulostomus_maculatus","Salvelinus_alpinus","Spinachia_spinachia","Oenanthe_melanoleuca"))
-tree$node.label = paste("N",1:length(tree$node.label),sep="")
-
-# ------------ Reading VGP Data ------------- #
-# Reading VGP annotations
-vgp_annots = fread("./annotations_vgp.txt")
-extend_lin = unique.data.frame(fread("./VGP_extended_lin.tsv")[,c("Family Scientific Name", "Extended lineage")])
-vgp_annots = merge(vgp_annots, extend_lin, by.x = "Family", by.y = "Family Scientific Name", all.x = T, all.y = F, )
-vgp_annots$ScientificName = gsub(pattern = " ", replacement = "_", x =vgp_annots$ScientificName)
-# Reading VGP Assemblies Respect results
-vgp_parameters = fread("./estimated-parameters_4.txt")
-vgp_parameters$`Assc.` = gsub(pattern = ".hist", replacement = "", x = vgp_parameters$sample)
-vgp_merged = as.data.table(merge(vgp_parameters, vgp_annots))
-# Merge all VGP data
-vgp_merged = as.data.table(subset(x = vgp_merged, subset = vgp_merged$ScientificName %in% tree$tip.label))
-vgp_merged$genome_length = as.numeric(vgp_merged$genome_length)
-vgp_merged$repeat_ratio = 1 - as.numeric(vgp_merged$uniqueness_ratio)
-#vgp_merged$GL_mbp = as.numeric(vgp_merged$genome_length)/1000000
-
-# ------- Reading 'Existing Genome' Data -------- #
-# Reading Existing Assembly annotations
-existing_annots = read.csv("./low_qual_genomes/curated_low_qual_species.tsv")#[,c("Assc.", "ScientificName")]
-existing_annots$ScientificName = gsub(pattern = " ", replacement = "_", x = existing_annots$scientific_name)
-existing_annots$`Assc.`= existing_annots$assembly_id
-# paste(existing_annots[existing_annots$assembly_id %in% 
-#                   c("GCA_021292165.1", "GCA_026018925.1", "GCA_036784965.1", 
-#                     "GCA_037893015.1", "GCA_048126635.1", "GCA_048301465.1", 
-#                     "GCA_048593235.1", "GCA_029582105.1", "GCA_024453875.1"), "ScientificName"], collapse = 'x,x')
-# Reading Existing Assembly Respect results
-existing_parameters = fread("./VGP_repeat-spectrum_ASR/comparision_to_other_genomes/respect_full-existing_parameters.txt")
-existing_parameters$`Assc.`= sapply(X = existing_parameters$sample, FUN = split_row)
-# Merge all Existing Assembly data
-existing_merged = as.data.table(merge(existing_parameters, existing_annots))
-existing_merged = as.data.table(subset(x = existing_merged, subset = existing_merged$ScientificName %in% tree$tip.label))
-existing_merged = existing_merged[`Assc.` != "GCA_019141155.1"]
-existing_merged$genome_length = as.numeric(existing_merged$genome_length)
-existing_merged$repeat_ratio = 1 - as.numeric(existing_merged$uniqueness_ratio)
-#existing_merged$GL_mbp = as.numeric(existing_merged$genome_length)/1000000
+setwd("~/Desktop/VGP_analyses/VGP_repeat-spectrum_ASR/comparision_to_other_genomes/")
+source("./subset_phylogeny.R")
 
 # =========================================== #
 # MAXIMUM LIKELIHOOD ANCESTRAL RECONSTRUCTION #
 # =========================================== #
-# Brownian motion (BM) model
-# the 'early-burst' model (EB) -> change tends to be concentrated towards the base of the tree
-# Ornstein-Uhlenbeck model (OU) ->  tendency towards a central value 
-# NOTE: OU not supported by phylotree
 # ------------------- HIGH COPY REPEAT PER MILLION ----------------------- #
 # ~ VGP ~
 vgp_HCRM_annots = setNames(vgp_merged$HCRM, vgp_merged$ScientificName)
 vgp_HCRM_ml_asr = anc.ML(tree, vgp_HCRM_annots, model = "BM")
-# writeAncestors(tree = tree, Anc = vgp_HCRM_ml_asr, file = "./subset_VGP_HCRM-ASR.nwk")
+writeAncestors(tree = tree, Anc = vgp_HCRM_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_VGP_HCRM-ASR.nwk")
 # extract internal node states
 vgp_HCRM_states = as.data.table(vgp_HCRM_ml_asr$ace, keep.rownames = T)
 names(vgp_HCRM_states) = c("node", "state")
@@ -83,7 +33,7 @@ vgp_HCRM_states$node = as.numeric(vgp_HCRM_states$node)
 # ~ Existing Genomes ~
 existing_HCRM_annots = setNames(existing_merged$HCRM, existing_merged$ScientificName)
 existing_HCRM_ml_asr = anc.ML(tree, existing_HCRM_annots, model = "BM")
-# writeAncestors(tree = tree, Anc = existing_HCRM_ml_recon, file = "./subset_existing_HCRM-ASR.nwk")
+writeAncestors(tree = tree, Anc = existing_HCRM_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_existing_HCRM-ASR.nwk")
 # extract internal node states
 existing_HCRM_states = as.data.table(existing_HCRM_ml_asr$ace, keep.rownames = T)
 names(existing_HCRM_states) = c("node", "state")
@@ -101,7 +51,7 @@ existing_HCRM_states$node = as.numeric(existing_HCRM_states$node)
 # ~ VGP ~
 vgp_UR_annots = setNames(vgp_merged$repeat_ratio, vgp_merged$ScientificName)
 vgp_UR_ml_asr = anc.ML(tree, vgp_UR_annots, model = "BM")
-# writeAncestors(tree = tree, Anc = vgp_UR_ml_asr, file = "./subset_VGP_UR-ASR.nwk")
+writeAncestors(tree = tree, Anc = vgp_UR_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_VGP_UR-ASR.nwk")
 # extract internal node states
 vgp_UR_states = as.data.table(vgp_UR_ml_asr$ace, keep.rownames = T)
 names(vgp_UR_states) = c("node", "state")
@@ -118,7 +68,7 @@ vgp_UR_states$node = as.numeric(vgp_UR_states$node)
 # ~ Existing Genomes ~
 existing_UR_annots = setNames(existing_merged$repeat_ratio, existing_merged$ScientificName)
 existing_UR_ml_asr = anc.ML(tree, existing_UR_annots, model = "BM")
-# writeAncestors(tree = tree, Anc = existing_UR_ml_recon, file = "./subset_existing_UR-ASR.nwk")
+writeAncestors(tree = tree, Anc = existing_UR_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_existing_UR-ASR.nwk")
 # extract internal node states
 existing_UR_states = as.data.table(existing_UR_ml_asr$ace, keep.rownames = T)
 names(existing_UR_states) = c("node", "state")
@@ -136,7 +86,7 @@ existing_UR_states$node = as.numeric(existing_UR_states$node)
 # ~ VGP ~
 vgp_GL_annots = setNames(vgp_merged$genome_length, vgp_merged$ScientificName)
 vgp_GL_ml_asr = anc.ML(tree, vgp_GL_annots, model = "BM")
-# writeAncestors(tree = tree, Anc = vgp__ml_asr, file = "./subset_VGP_-ASR.nwk")
+writeAncestors(tree = tree, Anc = vgp_GL_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_VGP_GL-ASR.nwk")
 # extract internal node states
 vgp_GL_states = as.data.table(vgp_GL_ml_asr$ace, keep.rownames = T)
 names(vgp_GL_states) = c("node", "state")
@@ -153,7 +103,7 @@ vgp_GL_states$node = as.numeric(vgp_GL_states$node)
 # ~ Existing Genomes ~
 existing_GL_annots = setNames(existing_merged$genome_length, existing_merged$ScientificName)
 existing_GL_ml_asr = anc.ML(tree, existing_GL_annots, model = "BM")
-# writeAncestors(tree = tree, Anc = existing__ml_recon, file = "./subset_existing_-ASR.nwk")
+writeAncestors(tree = tree, Anc = existing_GL_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_existing_GL-ASR.nwk")
 # extract internal node states
 existing_GL_states = as.data.table(existing_GL_ml_asr$ace, keep.rownames = T)
 names(existing_GL_states) = c("node", "state")
@@ -224,7 +174,7 @@ HCRM_plot = ggplot(data = all_HCRM_states[!is.na(ScientificName.x)],
                                 "Ancestral" = "#999999"  # Neutral Gray
   )) +
   coord_cartesian(xlim=c(0,700), ylim=c(0,700))
-HCRM_plot
+#HCRM_plot
 
 
 # ------------------- UNIQUENESS RATIO ----------------------- #
@@ -291,7 +241,7 @@ UR_plot = ggplot(data = all_UR_states[!is.na(ScientificName.x)],
   )) +
   #scale_color_manual(values = c("grey50", "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00")) +
   coord_cartesian(xlim=c(0,0.8), ylim=c(0,0.8))
-UR_plot
+#UR_plot
 
 #"#A50026" "#D73027" "#F46D43" "#FDAE61" "#FEE090" "#E0F3F8" "#ABD9E9" "#74ADD1" "#4575B4" "#313695"
 #COMPARISON TREE
@@ -348,11 +298,9 @@ GL_plot = ggplot(data = all_GL_states[!is.na(ScientificName.x)],
                                 "Ancestral" = "#999999"  # Neutral Gray
   )) +
   coord_cartesian(xlim=c(0,4000), ylim=c(0,4000))
-GL_plot
+#GL_plot
 
-
-UR_plot + HCRM_plot + GL_plot
-ggsave(plot = UR_plot + HCRM_plot + GL_plot, "./all_plots.pdf", width = 25*0.8 , height = 7*0.8)
+ggsave(plot = UR_plot + HCRM_plot + GL_plot, "../figures/all_plots.pdf", width = 25*0.8 , height = 7*0.8)
 
 
 ####################
@@ -362,37 +310,20 @@ ggsave(plot = UR_plot + HCRM_plot + GL_plot, "./all_plots.pdf", width = 25*0.8 ,
 scale_percent = function(x){scales::percent(x, scale=1)}
 
 ####################
+#HCRM_comp_tree
 
 HCRM_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none") %<+% all_HCRM_states +
   layout_circular() +  
-  #geom_tiplab(aes(label = paste(Superorder, ScientificName.x))) ++
-  #geom_tree(aes(color = cut(log10(state.x/state.y), breaks = c(-1,0,1,2,3,4))), 
-  geom_tree(aes(color = (state.x-state.y)/state.y * 100 ), 
-            continuous = 'colour', 
+  geom_tree(aes(color = (state.x-state.y)/state.y * 100 ),
+            continuous = 'colour',
             size=1.3) +
-  scale_color_gradient2(low = "#d500d5", 
-                        mid = "#ffffff", 
-                        high = "#008020", 
-                        midpoint = 0, 
-                        transform = "pseudo_log", 
-                        breaks = c(-10, 0, 10, 100, 1000, 10000), 
+  scale_color_gradient2(low = "#d500d5",
+                        mid = "#ffffff",
+                        high = "#008020",
+                        midpoint = 0,
+                        transform = "pseudo_log",
+                        breaks = c(-10, 0, 10, 100, 1000, 10000),
                         labels = scale_percent) +
-  # scale_color_gradientn(
-  #   colours = c("#4575B4", "#FEE090", "#D73027"),  # 3 colors
-  #   values  = scales::rescale(c(0.9, 10, 50)),     # 3 matching positions
-  #   limits  = c(0.1, 50),
-  #   oob     = scales::squish,
-  #   #breaks = c(1, 3, 6, 9, 12),
-  #   na.value = "#A50026",
-  #   #transform = "log2",
-  # ) +
-  #geom_tippoint(aes(color =  (state.x-state.y)/state.y * 100), na.rm = F) +
-  #scale_shape_binned() +
-  #scale_color_gradientn(palette = color_arr, values = c(0, 1)) +
-  #scale_color_gradient2(high = "#D7191C", mid = "grey", low = "#1A9641", midpoint = 1) +
-  # scale_color_gradientn(colours=rev(c("red", 'orange', 'green', 'cyan', 'blue')),
-  #                       breaks=c(200, 400, 600),
-  #                       limits=c(1, 800)) +
   guides(color = guide_colorbar("% Change in HCRM")) +
   geom_strip(taxa1 = "Myxine_glutinosa", taxa2 = "Lampetra_fluviatilis", extend = 0.3,
              label = "Agnatha", offset.text=1, angle = 1, 
@@ -400,7 +331,7 @@ HCRM_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none")
   geom_strip(taxa1 = "Stegostoma_tigrinum", taxa2 = "Carcharodon_carcharias",extend = 0.3,
              label = "Chondrichthyes", offset.text=1, angle = 5, 
              color = "#000") +
-  geom_strip(taxa1 = "Acipenser_ruthenus", taxa2 = "Scatophagus_argus", extend = 0.3,
+  geom_strip(taxa1 = "Acipenser_ruthenus", taxa2 = "Sparus_aurata", extend = 0.3,
              label = "Actinopterygii", offset.text=1, angle = 55,
              color = "#000") + 
   geom_strip(taxa1 = "Protopterus_annectens", taxa2 = "Latimeria_chalumnae", extend = 0.3,
@@ -415,13 +346,13 @@ HCRM_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none")
   geom_strip(taxa1 = "Monodelphis_domestica", taxa2 = "Sarcophilus_harrisii",extend = 0.3,
              label = "Marsupials", offset.text=7, angle = 300,
              color = "#000") +
-  geom_strip(taxa1 = "Dasypus_novemcinctus", taxa2 = "Choloepus_didactylus",extend = 0.3,
+  geom_strip(taxa1 = "Dasypus_novemcinctus", taxa2 = "Tamandua_tetradactyla",extend = 0.3,
              label = "Xenarthra", offset.text=6.5, angle = 304,
              color = "#000") +
-  geom_strip(taxa1 = "Dugong_dugon", taxa2 = "Elephas_maximus_indicus",extend = 0.3,
+  geom_strip(taxa1 = "Dugong_dugon", taxa2 = "Loxodonta_africana",extend = 0.3,
              label = "Afrotheria", offset.text=6.5, angle = 310,
              color = "#000") +
-  geom_strip(taxa1 = "Lemur_catta", taxa2 = "Marmota_flaviventris",extend = 0.3,
+  geom_strip(taxa1 = "Lemur_catta", taxa2 = "Urocitellus_parryii",extend = 0.3,
              label = "Supraprimates", offset.text=9, angle = 330,
              color = "#000") +
   geom_strip(taxa1 = "Sorex_araneus", taxa2 = "Grampus_griseus",extend = 0.3,
@@ -442,27 +373,26 @@ HCRM_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none")
   geom_strip(taxa1 = "Eudromia_elegans", taxa2 = "Rhea_pennata",extend = 0.3,
              label = "Palaeognathae", offset.text = 8.5, angle = 260 + 170,
              color = "#000") +
-  geom_strip(taxa1 = "Gallus_gallus", taxa2 = "Anser_brachyrhynchus",extend = 0.3,
+  geom_strip(taxa1 = "Gallus_gallus", taxa2 = "Anser_cygnoides",extend = 0.3,
              label = "GalloAnserformes", offset.text = 10, angle = 260+180,
              color = "#000") +
   geom_strip(taxa1 = "Cuculus_canorus", taxa2 = "Chlamydotis_macqueenii",extend = 0.3,
-             label = "Otidimorphae", offset.text = 1, angle = 267,
+             label = "Otidimorphae", offset.text = 1, angle = 273,
              color = "#000") +
   geom_strip(taxa1 = "Phoenicopterus_ruber", taxa2 = "Caloenas_nicobarica",extend = 0.3,
-             label = "Columbea", offset.text = 1, angle = 273,
+             label = "Columbea", offset.text = 1, angle = 275,
              color = "#000") +
   geom_strip(taxa1 = "Caprimulgus_europaeus", taxa2 = "Podargus_strigoides",extend = 0.3,
-             label = "Caprimulgimorphae", offset.text = 1, angle = 280,
+             label = "Caprimulgimorphae", offset.text = 1, angle = 270,
              color = "#000") +
-  geom_strip(taxa1 = "Opisthocomus_hoazin", taxa2 = "Larus_argentatus",extend = 0.3,
+  geom_strip(taxa1 = "Opisthocomus_hoazin", taxa2 = "Larus_michahellis",extend = 0.3,
              label = "Core waterbirds", offset.text = 1, angle = 295,
              color = "#000") +
   geom_strip(taxa1 = "Strix_aluco", taxa2 = "Agelaius_phoeniceus",extend = 0.3,
              label = "Core landbirds", offset.text = 1, angle = 332,
              color = "#000") +
   theme(plot.margin = unit(c(0,0,0,0), units = "cm")) 
-HCRM_comp_tree
-
+#ggsave(filename = "./HCRM_comp_tree.pdf", plot = HCRM_comp_tree, height = 14, width = 15)
 
 ## UR COMP TREE
 #summary(with(all_UR_states,(state.x-state.y)/state.y ))
@@ -472,18 +402,6 @@ UR_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none") %
   geom_tree(aes(color = (state.x-state.y)/state.y * 10 ), 
             #continuous = 'colour', 
             size=1.3) +
-  scale_color_gradient2(low = "#d500d5",
-                        mid = "#ffffff",
-                        high = "#008020",
-                        midpoint = 0,
-                        transform = "pseudo_log",
-                        breaks = c(-30, 0, 30, 100, 1000)/10,
-                        labels = function(x){scales::percent(x, scale=10)}) +
-
-  #scale_color_gradient2(high = "#D7191C", mid = "grey", low = "#1A9641") +
-  # scale_color_gradientn(colours=rev(c("red", 'orange', 'green', 'cyan', 'blue')),
-  #                       breaks=c(0.2, 0.4, 0.6),
-  #                       limits=c(0, 0.8))+
   guides(color = guide_colorbar("% Change in RR")) +
   geom_strip(taxa1 = "Myxine_glutinosa", taxa2 = "Lampetra_fluviatilis", extend = 0.3,
              label = "Agnatha", offset.text=1, angle = 1, 
@@ -491,7 +409,7 @@ UR_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none") %
   geom_strip(taxa1 = "Stegostoma_tigrinum", taxa2 = "Carcharodon_carcharias",extend = 0.3,
              label = "Chondrichthyes", offset.text=1, angle = 5, 
              color = "#000") +
-  geom_strip(taxa1 = "Acipenser_ruthenus", taxa2 = "Scatophagus_argus", extend = 0.3,
+  geom_strip(taxa1 = "Acipenser_ruthenus", taxa2 = "Sparus_aurata", extend = 0.3,
              label = "Actinopterygii", offset.text=1, angle = 55,
              color = "#000") + 
   geom_strip(taxa1 = "Protopterus_annectens", taxa2 = "Latimeria_chalumnae", extend = 0.3,
@@ -506,13 +424,13 @@ UR_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none") %
   geom_strip(taxa1 = "Monodelphis_domestica", taxa2 = "Sarcophilus_harrisii",extend = 0.3,
              label = "Marsupials", offset.text=7, angle = 300,
              color = "#000") +
-  geom_strip(taxa1 = "Dasypus_novemcinctus", taxa2 = "Choloepus_didactylus",extend = 0.3,
+  geom_strip(taxa1 = "Dasypus_novemcinctus", taxa2 = "Tamandua_tetradactyla",extend = 0.3,
              label = "Xenarthra", offset.text=6.5, angle = 304,
              color = "#000") +
-  geom_strip(taxa1 = "Dugong_dugon", taxa2 = "Elephas_maximus_indicus",extend = 0.3,
+  geom_strip(taxa1 = "Dugong_dugon", taxa2 = "Loxodonta_africana",extend = 0.3,
              label = "Afrotheria", offset.text=6.5, angle = 310,
              color = "#000") +
-  geom_strip(taxa1 = "Lemur_catta", taxa2 = "Marmota_flaviventris",extend = 0.3,
+  geom_strip(taxa1 = "Lemur_catta", taxa2 = "Urocitellus_parryii",extend = 0.3,
              label = "Supraprimates", offset.text=9, angle = 330,
              color = "#000") +
   geom_strip(taxa1 = "Sorex_araneus", taxa2 = "Grampus_griseus",extend = 0.3,
@@ -533,32 +451,39 @@ UR_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none") %
   geom_strip(taxa1 = "Eudromia_elegans", taxa2 = "Rhea_pennata",extend = 0.3,
              label = "Palaeognathae", offset.text = 8.5, angle = 260 + 170,
              color = "#000") +
-  geom_strip(taxa1 = "Gallus_gallus", taxa2 = "Anser_brachyrhynchus",extend = 0.3,
+  geom_strip(taxa1 = "Gallus_gallus", taxa2 = "Anser_cygnoides",extend = 0.3,
              label = "GalloAnserformes", offset.text = 10, angle = 260+180,
              color = "#000") +
   geom_strip(taxa1 = "Cuculus_canorus", taxa2 = "Chlamydotis_macqueenii",extend = 0.3,
-             label = "Otidimorphae", offset.text = 1, angle = 267,
+             label = "Otidimorphae", offset.text = 1, angle = 273,
              color = "#000") +
   geom_strip(taxa1 = "Phoenicopterus_ruber", taxa2 = "Caloenas_nicobarica",extend = 0.3,
-             label = "Columbea", offset.text = 1, angle = 273,
+             label = "Columbea", offset.text = 1, angle = 275,
              color = "#000") +
   geom_strip(taxa1 = "Caprimulgus_europaeus", taxa2 = "Podargus_strigoides",extend = 0.3,
-             label = "Caprimulgimorphae", offset.text = 1, angle = 280,
+             label = "Caprimulgimorphae", offset.text = 1, angle = 270,
              color = "#000") +
-  geom_strip(taxa1 = "Opisthocomus_hoazin", taxa2 = "Larus_argentatus",extend = 0.3,
+  geom_strip(taxa1 = "Opisthocomus_hoazin", taxa2 = "Larus_michahellis",extend = 0.3,
              label = "Core waterbirds", offset.text = 1, angle = 295,
              color = "#000") +
   geom_strip(taxa1 = "Strix_aluco", taxa2 = "Agelaius_phoeniceus",extend = 0.3,
              label = "Core landbirds", offset.text = 1, angle = 332,
              color = "#000") +
-  theme(plot.margin = unit(c(0,0,0,0), units = "cm")) + 
-  scale_color_stepsn(colors = rev(c("#D73027", "#FDAE61","#FEF090","#FFFFFF", "#ABD9E9")),
-                     nice.breaks = T,
-                     transform = "pseudo_log",
-                     breaks = c(-75,-25, 0, 25, 100, 300,1000)/10,
-                     labels = function(x){scales::percent(x, scale=10)})
-#UR_comp_tree
-ggsave(filename = "./UR_comparison_tree.pdf", plot = UR_comp_tree, height = 14, width = 15)
+  scale_color_gradient2(low = "#d500d5",
+                        mid = "#ffffff",
+                        high = "#008020",
+                        midpoint = 0,
+                        transform = "pseudo_log",
+                        breaks = c(-30, 0, 30, 100, 350, 1000)/10,
+                        labels = function(x){scales::percent(x, scale=10)}) +
+  # scale_color_stepsn(colors = rev(c("#D73027", "#FDAE61","#FEF090","#FFFFFF", "#ABD9E9")),
+  #                    nice.breaks = T,
+  #                    transform = "pseudo_log",
+  #                    breaks = c(-75,-25, 0, 25, 100, 300,1000)/10,
+  #                    labels = function(x){scales::percent(x, scale=10)}) +
+  theme(plot.margin = unit(c(0,0,0,0), units = "cm")) 
+
+#ggsave(filename = "../figures/RR_comparison_tree.pdf", plot = UR_comp_tree, height = 14, width = 15)
 
 
 
@@ -575,15 +500,6 @@ GL_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none") %
                         transform = "pseudo_log", 
                         breaks = c(-10, 0, 10, 100), 
                         labels = scale_percent) +
-  # scale_color_steps2(colors = rev(c("#D73027", "#FDAE61","#FEE090", "#4575B4")), 
-  #                    #breaks = c(1,1.75,3,5),
-  #                    n.breaks = 10,
-  #                    transform = "log2", guide = "legend", show.limits = T) +
-  # scale_color_gradientn(colours=rev(c("red", 'orange', 'green', 'cyan', 'blue')),
-  #                       n.breaks = 6,
-  #                       breaks=c(400, 1000, 3000, 8000, 22000),
-  #                       limits=c(290, 40000),
-  #                       trans = "log") +
   guides(color = guide_colorbar("% Change in Genome Length")) +
   geom_strip(taxa1 = "Myxine_glutinosa", taxa2 = "Lampetra_fluviatilis", extend = 0.3,
              label = "Agnatha", offset.text=1, angle = 1, 
@@ -591,7 +507,7 @@ GL_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none") %
   geom_strip(taxa1 = "Stegostoma_tigrinum", taxa2 = "Carcharodon_carcharias",extend = 0.3,
              label = "Chondrichthyes", offset.text=1, angle = 5, 
              color = "#000") +
-  geom_strip(taxa1 = "Acipenser_ruthenus", taxa2 = "Scatophagus_argus", extend = 0.3,
+  geom_strip(taxa1 = "Acipenser_ruthenus", taxa2 = "Sparus_aurata", extend = 0.3,
              label = "Actinopterygii", offset.text=1, angle = 55,
              color = "#000") + 
   geom_strip(taxa1 = "Protopterus_annectens", taxa2 = "Latimeria_chalumnae", extend = 0.3,
@@ -606,13 +522,13 @@ GL_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none") %
   geom_strip(taxa1 = "Monodelphis_domestica", taxa2 = "Sarcophilus_harrisii",extend = 0.3,
              label = "Marsupials", offset.text=7, angle = 300,
              color = "#000") +
-  geom_strip(taxa1 = "Dasypus_novemcinctus", taxa2 = "Choloepus_didactylus",extend = 0.3,
+  geom_strip(taxa1 = "Dasypus_novemcinctus", taxa2 = "Tamandua_tetradactyla",extend = 0.3,
              label = "Xenarthra", offset.text=6.5, angle = 304,
              color = "#000") +
-  geom_strip(taxa1 = "Dugong_dugon", taxa2 = "Elephas_maximus_indicus",extend = 0.3,
+  geom_strip(taxa1 = "Dugong_dugon", taxa2 = "Loxodonta_africana",extend = 0.3,
              label = "Afrotheria", offset.text=6.5, angle = 310,
              color = "#000") +
-  geom_strip(taxa1 = "Lemur_catta", taxa2 = "Marmota_flaviventris",extend = 0.3,
+  geom_strip(taxa1 = "Lemur_catta", taxa2 = "Urocitellus_parryii",extend = 0.3,
              label = "Supraprimates", offset.text=9, angle = 330,
              color = "#000") +
   geom_strip(taxa1 = "Sorex_araneus", taxa2 = "Grampus_griseus",extend = 0.3,
@@ -633,37 +549,29 @@ GL_comp_tree = ggtree(tree, color = "black", size = 1.5, branch.length="none") %
   geom_strip(taxa1 = "Eudromia_elegans", taxa2 = "Rhea_pennata",extend = 0.3,
              label = "Palaeognathae", offset.text = 8.5, angle = 260 + 170,
              color = "#000") +
-  geom_strip(taxa1 = "Gallus_gallus", taxa2 = "Anser_brachyrhynchus",extend = 0.3,
+  geom_strip(taxa1 = "Gallus_gallus", taxa2 = "Anser_cygnoides",extend = 0.3,
              label = "GalloAnserformes", offset.text = 10, angle = 260+180,
              color = "#000") +
   geom_strip(taxa1 = "Cuculus_canorus", taxa2 = "Chlamydotis_macqueenii",extend = 0.3,
-             label = "Otidimorphae", offset.text = 1, angle = 267,
+             label = "Otidimorphae", offset.text = 1, angle = 273,
              color = "#000") +
   geom_strip(taxa1 = "Phoenicopterus_ruber", taxa2 = "Caloenas_nicobarica",extend = 0.3,
-             label = "Columbea", offset.text = 1, angle = 273,
+             label = "Columbea", offset.text = 1, angle = 275,
              color = "#000") +
   geom_strip(taxa1 = "Caprimulgus_europaeus", taxa2 = "Podargus_strigoides",extend = 0.3,
-             label = "Caprimulgimorphae", offset.text = 1, angle = 280,
+             label = "Caprimulgimorphae", offset.text = 1, angle = 270,
              color = "#000") +
-  geom_strip(taxa1 = "Opisthocomus_hoazin", taxa2 = "Larus_argentatus",extend = 0.3,
+  geom_strip(taxa1 = "Opisthocomus_hoazin", taxa2 = "Larus_michahellis",extend = 0.3,
              label = "Core waterbirds", offset.text = 1, angle = 295,
              color = "#000") +
   geom_strip(taxa1 = "Strix_aluco", taxa2 = "Agelaius_phoeniceus",extend = 0.3,
              label = "Core landbirds", offset.text = 1, angle = 332,
              color = "#000") +
   theme(plot.margin = unit(c(0,0,0,0), units = "cm")) 
-#scale_color_viridis_b(n.breaks=6,option = "B")
-GL_comp_tree
-#ggsave("comp__tree.pdf", bad__tree, width = 15, height = 15)
 
-# 
-# ggtree(tree, color = "black", size = 1, branch.length="none") %<+% all_GL_states +
-#   layout_circular() +  
-#   #geom_tiplab2() +
-#   geom_tippoint(aes(color = `Extended lineage`)) +
-#   geom_strip(taxa1 = "Protopterus_annectens", taxa2 = "Protopterus_annectens", label = "OUTLIER", color = "red", angle = 90) 
-UR_comp_tree + HCRM_comp_tree + GL_comp_tree
-ggsave(plot = UR_comp_tree + HCRM_comp_tree + GL_comp_tree, "./ASR_comparison_trees.pdf", width = 45 , height = 15)
+
+#UR_comp_tree + HCRM_comp_tree + GL_comp_tree
+ggsave(plot = UR_comp_tree + HCRM_comp_tree + GL_comp_tree, "../figures/ASR_comparison_trees.pdf", width = 45 , height = 15)
 
 
 ########################
@@ -709,4 +617,7 @@ all_UR_states %>%
   filter(ScientificName.x == "Pan_paniscus") %>%
   summarize((state.x-state.y)/state.y, state.x, state.y)  
 
-
+# GL Change from Bonobo to Chimp
+(3239.869 - 3172.755)/ 3172.755 # = 2%
+# RR Change from Bonobo to Chimp
+(0.23-0.25)/0.25 # 8%
