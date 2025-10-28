@@ -283,8 +283,8 @@ GL_tree = ggtree(tree, color = "black", size =0, branch.length="none") %<+% GL_s
            size=1) +
   scale_color_gradientn(colours=rev(c("red", 'orange', 'green', 'cyan', 'blue')),
                         trans = "log",
-                        breaks=c(400, 1000, 3000, 8000, 22000),
-                        limits=c(200, 40000)
+                        breaks=c(150, 400, 1000, 3000, 8000, 22000),
+                        limits=c(100, 40290)
                         ) +
   layout_circular() + #geom_tiplab(size = 1, aes(color = Superorder, label = Superorder))+
   scale_fill_manual(values = colorRampPalette(brewer.pal(12,"Paired"))(24)) +
@@ -375,7 +375,7 @@ GL_tree = ggtree(tree, color = "black", size =0, branch.length="none") %<+% GL_s
              color = "#000") +
   theme(plot.margin = unit(c(0,0,0,0), units = "cm"))
 
-#GL_tree
+GL_tree
 #ggsave("./GL_tree.pdf", plot = GL_tree, width = 15, height = 15)
 
 # =========================================== #
@@ -389,44 +389,29 @@ ggsave("../figures/VGP_full_ASR.pdf", plot = UR_tree + HCRM_tree + GL_tree, widt
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-good_annots = fread("./annotations_vgp.txt")#[,c("Assc.", "ScientificName")]
-good_annots$ScientificName = gsub(pattern = " ", replacement = "_", x = good_annots$ScientificName)
-
-good_parameters = fread("./estimated-spectra_4.txt")
-good_parameters$`Assc.` = gsub(pattern = ".hist", replacement = "", 
-                               x = good_parameters$sample)
-
-good_merged = as.data.table(merge(good_parameters, good_annots))
-good_merged = as.data.table(subset(x = good_merged, 
-                                   subset = good_merged$ScientificName %in% tree$tip.label))
-good_UR_annots = setNames(good_merged$uniqueness_ratio, good_merged$ScientificName)
-
-
-bad_annots = fread("./low_qual_genomes/vertebrate_querySpeciesRep.tsv")
-bad_annots$ScientificName = gsub(pattern = " ", replacement = "_", x = bad_annots$scientific_name)
-bad_annots$`Assc.`= bad_annots$assembly_id
-
-bad_parameters = fread("./low_qual_genomes/bad-estimated-spectra.txt")
-bad_parameters$`Assc.`= sapply(X = bad_parameters$sample, FUN = split_row)
-
-bad_merged = as.data.table(merge(bad_parameters[,c("Assc.", "uniqueness_ratio", "HCRM")], bad_annots[,!c("assembly_id")]))
-bad_merged = as.data.table(subset(x = bad_merged, subset = bad_merged$ScientificName %in% tree$tip.label))
-#bad_merged[Assc. == "GCA_048287495.1", uniqueness_ratio := 0.63]
-bad_merged[Assc. == "GCA_048287495.1", uniqueness_ratio := .00005817118949809037]
-
-bad_UR_annots = setNames(bad_merged$uniqueness_ratio, bad_merged$ScientificName)
+# good_annots = fread("./annotations_vgp.txt")#[,c("Assc.", "ScientificName")]
+# good_annots$ScientificName = gsub(pattern = " ", replacement = "_", x = good_annots$ScientificName)
+# 
+# good_parameters = fread("./estimated-spectra_4.txt")
+# good_parameters$`Assc.` = gsub(pattern = ".hist", replacement = "", 
+#                                x = good_parameters$sample)
+# 
+# good_merged = as.data.table(merge(good_parameters, good_annots))
+# good_merged = as.data.table(subset(x = good_merged, 
+#                                    subset = good_merged$ScientificName %in% tree$tip.label))
+# good_UR_annots = setNames(good_merged$uniqueness_ratio, good_merged$ScientificName)
+# 
+# 
+# bad_annots = fread("./low_qual_genomes/vertebrate_querySpeciesRep.tsv")
+# bad_annots$ScientificName = gsub(pattern = " ", replacement = "_", x = bad_annots$scientific_name)
+# bad_annots$`Assc.`= bad_annots$assembly_id
+# 
+# bad_parameters = fread("./low_qual_genomes/bad-estimated-spectra.txt")
+# bad_parameters$`Assc.`= sapply(X = bad_parameters$sample, FUN = split_row)
+# 
+# bad_merged = as.data.table(merge(bad_parameters[,c("Assc.", "uniqueness_ratio", "HCRM")], bad_annots[,!c("assembly_id")]))
+# bad_merged = as.data.table(subset(x = bad_merged, subset = bad_merged$ScientificName %in% tree$tip.label))
+# #bad_merged[Assc. == "GCA_048287495.1", uniqueness_ratio := 0.63]
+# bad_merged[Assc. == "GCA_048287495.1", uniqueness_ratio := .00005817118949809037]
+# 
+# bad_UR_annots = setNames(bad_merged$uniqueness_ratio, bad_merged$ScientificName)

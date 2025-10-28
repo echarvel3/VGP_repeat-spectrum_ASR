@@ -44,8 +44,8 @@ pic_table$leafcount=vapply(pic_table$node, function(x) extract.clade(tree, node 
 
 #Labeling nodes of interest
 pic_table[node == "N165", nodelabel := "Bonobo - Chimpanzee"]
-pic_table[node == "N5", nodelabel := "Amniotes"]
-pic_table[node == "N4", nodelabel := "Osteichthyes"]
+pic_table[node == "N5", nodelabel := "Rhipidistia"]
+pic_table[node == "N4", nodelabel := "Sarcopterygii"]
 
 #Plot (with no ouliers)
 pic_correlation_plot= 
@@ -56,6 +56,7 @@ pic_correlation_plot=
   geom_vline(xintercept = 0,linetype="dotted",color="grey40")+
   geom_hline(yintercept = 0,linetype="dotted",color="grey40")+
   geom_point(shape = 21,color="black") +
+  #geom_label(aes(label = node)) +
   ggrepel::geom_label_repel(aes(label = ifelse(node %in% c("N4", "N5", "N165"), 
                                                yes = nodelabel, no = NA),
                                 color = ifelse(node %in% c("N4", "N5"),
@@ -76,18 +77,22 @@ pic_correlation_plot=
         panel.grid.major.y = element_line(linewidth = 0.1, color="grey80"),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_line(linewidth = 0.1, color="grey80"),
-        legend.position =c(.9,.19),
-        legend.direction = "horizontal",
-        legend.title.position = "top",
+        #legend.position =c(0.3, 0.3),
+        #legend.direction = "horizontal",
+        legend.title.position = "bottom",
         legend.text = element_text(size=12),
         legend.title = element_text(size=15),
         legend.key.spacing.x = unit(2.0, "cm"),
         strip.text = element_text(size = 17),
         panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
         plot.margin = margin(10, 10, 10, 10)) +
+  scale_y_break(c(-2e+10, -4e+10), ticklabels = c(2.0e+10, 1.0e+10, 0, -1.0e+10, -2.0e+10)) +
+  scale_y_continuous(n.breaks = 2) +
   scale_fill_viridis_b(breaks=c(2,3,5,20,50,200),direction = -1,name="# Leaves")
 
-pic_correlation_plot
+#pic_correlation_plot
+ggsave(filename = "../figures/phylogenetic_independent_contrasts.pdf", plot = pic_correlation_plot, height = 6, width = 13)
+
 
 # Node labeling test figure...
 # treeplot = ggtree(tree) %<+% all_HCRM_states +
@@ -306,10 +311,13 @@ lm_predictions = ggplot(data, aes(x = RR, y = GL, yend=V1, color = V2)) +
 
 lm_predictions
 
-ggsave(filename = "../figures/linear_modeling_results.pdf", 
-       plot = cowplot::plot_grid(pic_correlation_plot, 
-                                 lm_predictions,  
-                                 ncol = 1, 
-                                 labels = c("A", "B"), label_size = 30, label_y = 1.025,
-                                 rel_heights = c(1,1.5)),
-       height = 13, width = 13)
+ggsave(filename = "../figures/phylogenetic_regression.pdf", 
+       plot = lm_predictions, height = 8, width = 13)
+
+# ggsave(filename = "../figures/linear_modeling_results.pdf", 
+#        plot = cowplot::plot_grid(pic_correlation_plot, 
+#                                  lm_predictions,  
+#                                  ncol = 1, 
+#                                  labels = c("A", "B"), label_size = 30, label_y = 1.025,
+#                                  rel_heights = c(1,1.5)),
+#        height = 13, width = 13)

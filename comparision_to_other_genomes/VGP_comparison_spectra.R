@@ -94,7 +94,7 @@ ggplot(
         panel.grid.major.y = element_line(linewidth = 0.1, color="grey80"),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_line(linewidth = 0.1, color="grey80"),
-        legend.position = c(0.9215, 0.79),
+        legend.position = c(0.9345, 0.79),
         legend.box.background = element_rect(color="black", size=1),
         #legend.justification = c("right", "top"),
         legend.box.just = c("right", "top"),
@@ -108,8 +108,8 @@ ggplot(
                      #labels=percent,
                      trans="log10")+
   scale_x_continuous(breaks=c(1,10,20,30,40,50),name="31-mer frequency")
-arrow_plot
-ggsave("../figures/arrow_plot_kmer_count.pdf", plot = arrow_plot, width = 16, height = 7)
+#arrow_plot
+ggsave("../figures/arrow_plot_kmer_count.pdf", plot = arrow_plot, width = 19, height = 7)
 
 #  Removed kmer frequency plot
 #  z[!is.na(`Extended lineage`)] %>%
