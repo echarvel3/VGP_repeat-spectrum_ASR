@@ -8,6 +8,7 @@ library(dplyr)
 
 setwd("~/Desktop/VGP_analyses/VGP_repeat-spectrum_ASR/comparision_to_other_genomes/")
 source("./subset_phylogeny.R")
+tree$node.label <- sprintf("%04d", as.integer(tree$node.label))
 
 # VGP subset species with previously existing genomes
 # Scripts used to generate ancestral reconstructions of three parameters:
@@ -22,6 +23,7 @@ source("./subset_phylogeny.R")
 # ~ VGP ~
 vgp_HCRM_annots = setNames(vgp_merged$HCRM, vgp_merged$ScientificName)
 vgp_HCRM_ml_asr = anc.ML(tree, vgp_HCRM_annots, model = "BM")
+names(vgp_HCRM_ml_asr$ace) <- sprintf("%04d", as.integer(names(vgp_HCRM_ml_asr$ace)))
 writeAncestors(tree = tree, Anc = vgp_HCRM_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_VGP_HCRM-ASR.nwk")
 # extract internal node states
 vgp_HCRM_states = as.data.table(vgp_HCRM_ml_asr$ace, keep.rownames = T)
@@ -39,6 +41,7 @@ vgp_HCRM_states$node = as.numeric(vgp_HCRM_states$node)
 # ~ Existing Genomes ~
 existing_HCRM_annots = setNames(existing_merged$HCRM, existing_merged$ScientificName)
 existing_HCRM_ml_asr = anc.ML(tree, existing_HCRM_annots, model = "BM")
+names(existing_HCRM_ml_asr$ace) <- sprintf("%04d", as.integer(names(existing_HCRM_ml_asr$ace)))
 writeAncestors(tree = tree, Anc = existing_HCRM_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_existing_HCRM-ASR.nwk")
 # extract internal node states
 existing_HCRM_states = as.data.table(existing_HCRM_ml_asr$ace, keep.rownames = T)
@@ -57,6 +60,7 @@ existing_HCRM_states$node = as.numeric(existing_HCRM_states$node)
 # ~ VGP ~
 vgp_RR_annots = setNames(vgp_merged$repeat_ratio, vgp_merged$ScientificName)
 vgp_RR_ml_asr = anc.ML(tree, vgp_RR_annots, model = "BM")
+names(vgp_RR_ml_asr$ace) <- sprintf("%04d", as.integer(names(vgp_RR_ml_asr$ace)))
 writeAncestors(tree = tree, Anc = vgp_RR_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_VGP_RR-ASR.nwk")
 # extract internal node states
 vgp_RR_states = as.data.table(vgp_RR_ml_asr$ace, keep.rownames = T)
@@ -74,6 +78,7 @@ vgp_RR_states$node = as.numeric(vgp_RR_states$node)
 # ~ Existing Genomes ~
 existing_RR_annots = setNames(existing_merged$repeat_ratio, existing_merged$ScientificName)
 existing_RR_ml_asr = anc.ML(tree, existing_RR_annots, model = "BM")
+names(existing_RR_ml_asr$ace) <- sprintf("%04d", as.integer(names(existing_RR_ml_asr$ace)))
 writeAncestors(tree = tree, Anc = existing_RR_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_existing_RR-ASR.nwk")
 # extract internal node states
 existing_RR_states = as.data.table(existing_RR_ml_asr$ace, keep.rownames = T)
@@ -92,6 +97,7 @@ existing_RR_states$node = as.numeric(existing_RR_states$node)
 # ~ VGP ~
 vgp_GL_annots = setNames(vgp_merged$genome_length, vgp_merged$ScientificName)
 vgp_GL_ml_asr = anc.ML(tree, vgp_GL_annots, model = "BM")
+names(vgp_GL_ml_asr$ace) <- sprintf("%04d", as.integer(names(vgp_GL_ml_asr$ace)))
 writeAncestors(tree = tree, Anc = vgp_GL_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_VGP_GL-ASR.nwk")
 # extract internal node states
 vgp_GL_states = as.data.table(vgp_GL_ml_asr$ace, keep.rownames = T)
@@ -109,6 +115,7 @@ vgp_GL_states$node = as.numeric(vgp_GL_states$node)
 # ~ Existing Genomes ~
 existing_GL_annots = setNames(existing_merged$genome_length, existing_merged$ScientificName)
 existing_GL_ml_asr = anc.ML(tree, existing_GL_annots, model = "BM")
+names(existing_GL_ml_asr$ace) <- sprintf("%04d", as.integer(names(existing_GL_ml_asr$ace)))
 writeAncestors(tree = tree, Anc = existing_GL_ml_asr, file = "../comparision_to_other_genomes/ASR/subset_existing_GL-ASR.nwk")
 # extract internal node states
 existing_GL_states = as.data.table(existing_GL_ml_asr$ace, keep.rownames = T)

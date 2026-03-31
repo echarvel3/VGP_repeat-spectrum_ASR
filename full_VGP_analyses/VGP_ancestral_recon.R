@@ -9,6 +9,8 @@ library(ggtree)
 setwd("~/Desktop/VGP_analyses/VGP_repeat-spectrum_ASR/full_VGP_analyses/")
 #Read Full VGP Tree
 tree = read.tree("../roadies_v1.1.16b.nwk") 
+tree$node.label = c(1:580)+581
+tree$node.label <- sprintf("%04d", as.integer(tree$node.label))
 #Read Taxonomy Annotations
 merged_annots = fread("../annotations_vgp.txt")
 #Read VGP Respect Results
@@ -30,6 +32,7 @@ merged_annots  = merge(x = respect_results,  y = merged_annots, by.x = "sample",
 # High Copy Repeats per Million ASR
 HCRM_annots = setNames(object = merged_annots$HCRM, nm = merged_annots$sample)
 HCRM_ml_asr = anc.ML(tree, HCRM_annots, model = "BM")
+names(HCRM_ml_asr$ace) <- sprintf("%04d", as.integer(names(HCRM_ml_asr$ace)))
 writeAncestors(tree = tree, Anc = HCRM_ml_asr, file = "./ASR/full_VGP_HCRM-ASR.nwk")
 # extract internal node states
 HCRM_states = as.data.table(HCRM_ml_asr$ace, keep.rownames = T)
@@ -48,6 +51,7 @@ HCRM_states$node = as.numeric(HCRM_states$node)
 # Repeat Ratio ASR
 RR_annots = setNames(object = 1-merged_annots$uniqueness_ratio, nm = merged_annots$sample)
 RR_ml_asr = anc.ML(tree, RR_annots, model = "BM")
+names(RR_ml_asr$ace) <- sprintf("%04d", as.integer(names(RR_ml_asr$ace)))
 writeAncestors(tree = tree, Anc = RR_ml_asr, file = "./ASR/full_VGP_RR-ASR.nwk")
 # extract internal node states
 RR_states = as.data.table(RR_ml_asr$ace, keep.rownames = T)
@@ -67,7 +71,11 @@ merged_annots$GL_mbp = merged_annots$genome_length/1000000
 # Genome Length ASR
 GL_annots = setNames(object = merged_annots$GL_mbp, nm = merged_annots$sample)
 GL_ml_asr = anc.ML(tree, GL_annots, model = "BM", )
-writeAncestors(tree = tree, Anc = GL_ml_asr, file = "./ASR/full_VGP_GL-ASR.nwk")
+#GL_ml_asr = fastAnc(tree, GL_annots)
+names(GL_ml_asr$ace) <- sprintf("%04d", as.integer(names(GL_ml_asr$ace)))
+writeAncestors(tree = tree, Anc = GL_ml_asr, 
+               file = "./ASR/full_VGP_GL-ASR.nwk")
+
 # extract internal node states
 GL_states = as.data.table(GL_ml_asr$ace, keep.rownames = T)
 names(GL_states) = c("node", "state")
@@ -77,8 +85,9 @@ tip_labels = merge(tip_labels, as.data.table(GL_annots, keep.rownames = T), by.x
 names(tip_labels) = c('sample', 'node', 'state')
 # merging ASR data with VGP annotations
 GL_states = rbind(GL_states, tip_labels, use.names = T, fill = T)
-GL_states = merge(GL_states, as.data.table(merged_annots, keep.rownames = T), all = T)
+GL_states = merge(GL_states, as.data.table(merged_annots, keep.rownames = F), by="sample", all = T)
 GL_states$node = as.numeric(GL_states$node)
+
 
 # =========================================== #
 #             TREE VISUALIZATION              #
@@ -336,6 +345,26 @@ RR_tree
 
 # ------------------------------------------ #
 
+head(cbind(
+  ggtree_index = (Ntip(tree) + 1):(Ntip(tree) + Nnode(tree)),
+  node_label   = tree$node.label,
+  ace_name     = names(GL_ml_asr$ace)
+))
+
+# Check if node labels are numeric or character, and whether they're contiguous
+head(tree$node.label)
+head(names(GL_ml_asr$ace))
+
+# Check tip ordering matches your annotation table
+head(cbind(
+  tree_tip  = tree$tip.label,
+  annot_tip = merged_annots$sample
+))
+
+# What does GL_states look like before merging?
+head(GL_states[order(GL_states$node), ], 20)
+
+
 # Genome Length Tree
 GL_tree = 
   ggtree(tree, color = "black", size =1.2, branch.length="none") %<+% GL_states +
@@ -407,9 +436,8 @@ GL_tree =
              color = "#00796B", extend = 0.5) +
   theme(plot.margin = unit(c(-5,-5,-5,-5), units = "cm"))
 
-#GL_tree
+GL_tree
 #ggsave("./GL_tree.pdf", plot = GL_tree, width = 15, height = 15)
-
 
 # =========================================== #
 #         BRANCH LENGTH VISUALIZATION         #
